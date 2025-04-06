@@ -21,6 +21,16 @@ export class GrokService {
 
   async getResponse(prompt: string, userId: string): Promise<any> {
     try {
+      // Create a new prompt document in the database
+      const newPrompt = new this.promptModel({
+        userId,
+        text: prompt,
+        createdAt: new Date(),
+      });
+      
+      const savedPrompt = await newPrompt.save();
+      
+      // Get response from API directly instead of using non-existent grokApiService
       const response = await axios.post(
         `${this.apiUrl}/completions`,
         {
@@ -35,31 +45,26 @@ export class GrokService {
           },
         },
       );
-
+  
       const responseText = response.data.choices[0].text.trim();
       
-      // Save the prompt and response
-      const promptRecord = new this.promptModel({
-        text: prompt,
-        userId,
+      // Update the prompt document with the response
+      await this.promptModel.findByIdAndUpdate(savedPrompt._id, {
         response: {
           text: responseText,
           raw: response.data,
         },
       });
       
-      await promptRecord.save();
-
       return {
         text: responseText,
-        promptId: promptRecord._id,
-        raw: response.data,
+        promptId: savedPrompt._id,
       };
     } catch (error) {
-      this.logger.error(`Failed to get response from Grok AI: ${error.message}`);
+      this.logger.error(`Error getting response from Grok: ${error.message}`);
       throw new HttpException(
-        'Failed to get response from Grok AI',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to get response from Grok',
+        HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
