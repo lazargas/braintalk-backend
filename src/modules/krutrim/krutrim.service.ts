@@ -119,11 +119,28 @@ export class KrutrimService {
 
   // Save audio details
   async saveAudioDetails(promptId: string, audioUrl: string, voiceId: string, duration: number): Promise<void> {
-    await this.promptModel.findByIdAndUpdate(promptId, {
-      audioUrl,
-      voiceId,
-      duration,
-    });
+    this.logger.log(`Saving audio details for prompt ${promptId}: audioUrl=${audioUrl}, voiceId=${voiceId}, duration=${duration}`);
+    
+    try {
+      const updatedPrompt = await this.promptModel.findByIdAndUpdate(
+        promptId,
+        {
+          audioUrl,
+          voiceId,
+          duration,
+        },
+        { new: true } // Return the updated document
+      );
+      
+      if (!updatedPrompt) {
+        this.logger.error(`Failed to update prompt ${promptId} with audio details: Prompt not found`);
+      } else {
+        this.logger.log(`Successfully updated prompt ${promptId} with audio details`);
+      }
+    } catch (error) {
+      this.logger.error(`Error updating prompt ${promptId} with audio details: ${error.message}`);
+      throw error;
+    }
   }
 
   // Get user history
