@@ -9,6 +9,7 @@ export class CacheService {
 
   constructor(private configService: ConfigService) {
     this.redis = new Redis.default({
+      username: 'default',
       host: this.configService.get<string>('REDIS_HOST'),
       port: this.configService.get<number>('REDIS_PORT'),
       password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
